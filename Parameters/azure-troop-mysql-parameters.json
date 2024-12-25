@@ -1,0 +1,16 @@
+"firewallRules": {
+    "value": {
+        "rules": [
+            {
+                "name": "AllowAllAzureServicesAndResourcesWithinAzureIps",
+                "endIPAddress": "0.0.0.0",
+                "startIPAddress": "0.0.0.0"
+            },
+            {
+                "name": "ClientIPAddress",
+                "startIPAddress": "<REPLACE_WITH_CLIENT_IPv6>",
+                "endIPAddress": "<REPLACE_WITH_CLIENT_IPv6>"
+            }
+        ]
+    }
+}
