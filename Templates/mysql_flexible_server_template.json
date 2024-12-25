@@ -1,251 +1,428 @@
 {
-    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "2.0.0.0",
     "parameters": {
-        "apiVersion": {
-            "type": "string",
-            "defaultValue": "2021-05-01"
-        },
-        "administratorLogin": {
-            "type": "string"
-        },
-        "administratorLoginPassword": {
-            "type": "securestring"
-        },
-        "location": {
-            "type": "string"
-        },
-        "serverName": {
-            "type": "string"
-        },
-        "serverEdition": {
-            "type": "string"
-        },
-        "vCores": {
-            "type": "int",
-            "defaultValue": 4
-        },
-        "storageSizeGB": {
-            "type": "int"
-        },
-        "haEnabled": {
-            "type": "string",
-            "defaultValue": "Disabled"
-        },
-        "availabilityZone": {
-            "type": "string",
-            "defaultValue": ""
-        },
-        "standbyAvailabilityZone": {
-            "type": "string"
-        },
-        "version": {
-            "type": "string"
-        },
-        "tags": {
-            "type": "object",
-            "defaultValue": {}
-        },
-        "firewallRules": {
-            "type": "object",
-            "defaultValue": {}
-        },
-        "backupRetentionDays": {
-            "type": "int"
-        },
-        "geoRedundantBackup": {
-            "type": "string"
-        },
-        "vmName": {
-            "type": "string",
-            "defaultValue": "Standard_B1ms"
-        },
-        "storageIops": {
-            "type": "int"
-        },
-        "storageAutogrow": {
-            "type": "string",
-            "defaultValue": "Enabled"
-        },
-        "autoIoScaling": {
-            "type": "string",
-            "defaultValue": "Disabled"
-        },
-        "identityData": {
-            "type": "object",
-            "defaultValue": {}
-        },
-        "dataEncryptionData": {
-            "type": "object",
-            "defaultValue": {}
-        },
-        "serverParameters": {
-            "type": "array",
-            "defaultValue": []
-        },
-        "aadEnabled": {
-            "type": "bool",
-            "defaultValue": false
-        },
-        "aadData": {
-            "type": "object",
-            "defaultValue": {}
-        },
-        "guid": {
-            "type": "string",
-            "defaultValue": "[newGuid()]"
-        },
-        "network": {
-            "type": "object",
-            "defaultValue": {}
-        },
-        "firewallRulesAPIVersion": {
-            "type": "string",
-            "defaultValue": "2022-01-01"
-        },
-        "acceleratedLogs": {
-            "type": "string",
-            "defaultValue": "Disabled"
+      "apiVersion": {
+        "type": "string",
+        "defaultValue": "2021-05-01",
+        "metadata": {
+          "description": "API version for MySQL Flexible Server."
         }
+      },
+      "administratorLogin": {
+        "type": "string",
+        "metadata": {
+          "description": "Administrator username for the MySQL server."
+        }
+      },
+      "administratorLoginPassword": {
+        "type": "securestring",
+        "metadata": {
+          "description": "Password for the administrator account."
+        }
+      },
+      "location": {
+        "type": "string",
+        "defaultValue": "[resourceGroup().location]",
+        "metadata": {
+          "description": "Location for all resources."
+        }
+      },
+      "serverName": {
+        "type": "string",
+        "metadata": {
+          "description": "Name of the MySQL server."
+        }
+      },
+      "databaseName": {
+        "type": "string",
+        "defaultValue": "myDatabase",
+        "metadata": {
+          "description": "The name of the database to be created."
+        }
+      },
+      "serverEdition": {
+        "type": "string",
+        "allowedValues": [
+          "Basic",
+          "GeneralPurpose",
+          "MemoryOptimized"
+        ],
+        "defaultValue": "GeneralPurpose",
+        "metadata": {
+          "description": "Edition of the MySQL server."
+        }
+      },
+      "vCores": {
+        "type": "int",
+        "defaultValue": 4,
+        "metadata": {
+          "description": "Number of virtual cores."
+        }
+      },
+      "storageSizeGB": {
+        "type": "int",
+        "defaultValue": 32,
+        "metadata": {
+          "description": "Storage size in GB."
+        }
+      },
+      "haEnabled": {
+        "type": "string",
+        "defaultValue": "Disabled",
+        "allowedValues": [
+          "Enabled",
+          "Disabled"
+        ],
+        "metadata": {
+          "description": "High availability configuration."
+        }
+      },
+      "availabilityZone": {
+        "type": "string",
+        "defaultValue": "",
+        "metadata": {
+          "description": "Primary availability zone."
+        }
+      },
+      "standbyAvailabilityZone": {
+        "type": "string",
+        "defaultValue": "2",
+        "metadata": {
+          "description": "Standby availability zone for high availability."
+        }
+      },
+      "version": {
+        "type": "string",
+        "defaultValue": "5.7",
+        "metadata": {
+          "description": "MySQL server version."
+        }
+      },
+      "tags": {
+        "type": "object",
+        "defaultValue": {},
+        "metadata": {
+          "description": "Tags to apply to all resources."
+        }
+      },
+      "firewallRules": {
+        "type": "array",
+        "defaultValue": [],
+        "metadata": {
+          "description": "List of firewall rules."
+        }
+      },
+      "backupRetentionDays": {
+        "type": "int",
+        "defaultValue": 7,
+        "metadata": {
+          "description": "Number of days to retain backups."
+        }
+      },
+      "geoRedundantBackup": {
+        "type": "string",
+        "defaultValue": "Disabled",
+        "allowedValues": [
+          "Enabled",
+          "Disabled"
+        ],
+        "metadata": {
+          "description": "Enable geo-redundant backups."
+        }
+      },
+      "vmName": {
+        "type": "string",
+        "defaultValue": "Standard_B1ms",
+        "metadata": {
+          "description": "SKU name for the server."
+        }
+      },
+      "storageIops": {
+        "type": "int",
+        "defaultValue": 3000,
+        "metadata": {
+          "description": "Storage IOPS."
+        }
+      },
+      "storageAutogrow": {
+        "type": "string",
+        "defaultValue": "Enabled",
+        "allowedValues": [
+          "Enabled",
+          "Disabled"
+        ],
+        "metadata": {
+          "description": "Enable storage autogrowth."
+        }
+      },
+      "autoIoScaling": {
+        "type": "string",
+        "defaultValue": "Disabled",
+        "allowedValues": [
+          "Enabled",
+          "Disabled"
+        ],
+        "metadata": {
+          "description": "Enable automatic IO scaling."
+        }
+      },
+      "identityData": {
+        "type": "object",
+        "defaultValue": {},
+        "metadata": {
+          "description": "Identity configuration data."
+        }
+      },
+      "dataEncryptionData": {
+        "type": "object",
+        "defaultValue": {},
+        "metadata": {
+          "description": "Data encryption settings."
+        }
+      },
+      "serverParameters": {
+        "type": "array",
+        "defaultValue": [],
+        "metadata": {
+          "description": "Server configuration parameters."
+        }
+      },
+      "aadEnabled": {
+        "type": "bool",
+        "defaultValue": false,
+        "metadata": {
+          "description": "Enable Azure Active Directory integration."
+        }
+      },
+      "aadData": {
+        "type": "object",
+        "defaultValue": {},
+        "metadata": {
+          "description": "Azure AD configuration data."
+        }
+      },
+      "network": {
+        "type": "object",
+        "defaultValue": {},
+        "metadata": {
+          "description": "Network configuration."
+        }
+      },
+      "firewallRulesAPIVersion": {
+        "type": "string",
+        "defaultValue": "2022-01-01",
+        "metadata": {
+          "description": "API version for firewall rules."
+        }
+      },
+      "acceleratedLogs": {
+        "type": "string",
+        "defaultValue": "Disabled",
+        "allowedValues": [
+          "Enabled",
+          "Disabled"
+        ],
+        "metadata": {
+          "description": "Enable accelerated logs."
+        }
+      },
+      "guid": {
+        "type": "string",
+        "defaultValue": "[newGuid()]",
+        "metadata": {
+          "description": "Unique GUID for deployment (used to ensure uniqueness for nested deployments)."
+        }
+      }
     },
     "variables": {
-        "api": "[parameters('apiVersion')]",
-        "firewallRules": "[parameters('firewallRules').rules]",
-        "serverParameters": "[parameters('serverParameters')]"
+      "api": "[parameters('apiVersion')]",
+      "firewallRules": "[parameters('firewallRules')]",
+      "serverParameters": "[parameters('serverParameters')]",
+      "fullyQualifiedServerName": "[concat(parameters('serverName'), '.mysql.database.azure.com')]"
     },
     "resources": [
-        {
-            "apiVersion": "[variables('api')]",
-            "location": "[parameters('location')]",
-            "name": "[parameters('serverName')]",
-            "identity": "[if(empty(parameters('identityData')), json('null'), parameters('identityData'))]",
-            "properties": {
-                "createMode": "Default",
-                "version": "[parameters('version')]",
-                "administratorLogin": "[parameters('administratorLogin')]",
-                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
-                "Network": "[if(empty(parameters('network')), json('null'), parameters('network'))]",
-                "Storage": {
-                    "StorageSizeGB": "[parameters('storageSizeGB')]",
-                    "Iops": "[parameters('storageIops')]",
-                    "Autogrow": "[parameters('storageAutogrow')]",
-                    "AutoIoScaling": "[parameters('autoIoScaling')]",
-                    "LogOnDisk": "[parameters('acceleratedLogs')]"
-                },
-                "Backup": {
-                    "backupRetentionDays": "[parameters('backupRetentionDays')]",
-                    "geoRedundantBackup": "[parameters('geoRedundantBackup')]"
-                },
-                "availabilityZone": "[parameters('availabilityZone')]",
-                "highAvailability": {
-                    "mode": "[parameters('haEnabled')]",
-                    "standbyAvailabilityZone": "[parameters('standbyAvailabilityZone')]"
-                },
-                "dataencryption": "[if(empty(parameters('dataEncryptionData')), json('null'), parameters('dataEncryptionData'))]"
-            },
-            "sku": {
-                "name": "[parameters('vmName')]",
-                "tier": "[parameters('serverEdition')]",
-                "capacity": "[parameters('vCores')]"
-            },
-            "tags": "[parameters('tags')]",
-            "type": "Microsoft.DBforMySQL/flexibleServers"
+      // ------------------------------------------------------
+      // 1) Main MySQL Flexible Server
+      // ------------------------------------------------------
+      {
+        "type": "Microsoft.DBforMySQL/flexibleServers",
+        "apiVersion": "[variables('api')]",
+        "name": "[parameters('serverName')]",
+        "location": "[parameters('location')]",
+        "identity": "[if(empty(parameters('identityData')), json('null'), parameters('identityData'))]",
+        "properties": {
+          "createMode": "Default",
+          "version": "[parameters('version')]",
+          "administratorLogin": "[parameters('administratorLogin')]",
+          "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+          "network": "[if(empty(parameters('network')), json('null'), parameters('network'))]",
+          "storage": {
+            "storageSizeGB": "[parameters('storageSizeGB')]",
+            "iops": "[parameters('storageIops')]",
+            "autogrow": "[parameters('storageAutogrow')]",
+            "autoIoScaling": "[parameters('autoIoScaling')]",
+            "logOnDisk": "[parameters('acceleratedLogs')]"
+          },
+          "backup": {
+            "backupRetentionDays": "[parameters('backupRetentionDays')]",
+            "geoRedundantBackup": "[parameters('geoRedundantBackup')]"
+          },
+          "availabilityZone": "[parameters('availabilityZone')]",
+          "highAvailability": {
+            "mode": "[parameters('haEnabled')]",
+            "standbyAvailabilityZone": "[parameters('standbyAvailabilityZone')]"
+          },
+          "dataEncryption": "[if(empty(parameters('dataEncryptionData')), json('null'), parameters('dataEncryptionData'))]"
         },
-        {
-            "condition": "[greater(length(variables('firewallRules')), 0)]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2019-08-01",
-            "name": "[concat('firewallRules-', parameters('guid'), '-', copyIndex())]",
-            "copy": {
-                "count": "[if(greater(length(variables('firewallRules')), 0), length(variables('firewallRules')), 1)]",
-                "mode": "Serial",
-                "name": "firewallRulesIterator"
-            },
-            "dependsOn": [
-                "[concat('Microsoft.DBforMySQL/flexibleServers/', parameters('serverName'))]",
-                "[concat('Microsoft.Resources/deployments/addAdmins-', parameters('guid'))]"
-            ],
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": [
-                        {
-                            "type": "Microsoft.DBforMySQL/flexibleServers/firewallRules",
-                            "name": "[concat(parameters('serverName'),'/',variables('firewallRules')[copyIndex()].name)]",
-                            "apiVersion": "[parameters('firewallRulesAPIVersion')]",
-                            "properties": {
-                                "StartIpAddress": "[variables('firewallRules')[copyIndex()].startIPAddress]",
-                                "EndIpAddress": "[variables('firewallRules')[copyIndex()].endIPAddress]"
-                            }
-                        }
-                    ]
-                }
-            }
+        "sku": {
+          "name": "[parameters('vmName')]",
+          "tier": "[parameters('serverEdition')]",
+          "capacity": "[parameters('vCores')]"
         },
-        {
-            "condition": "[parameters('aadEnabled')]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2019-08-01",
-            "name": "[concat('addAdmins-', parameters('guid'))]",
-            "dependsOn": [
-                "[concat('Microsoft.DBforMySQL/flexibleServers/', parameters('serverName'))]"
-            ],
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": [
-                        {
-                            "type": "Microsoft.DBforMySQL/flexibleServers/administrators",
-                            "name": "[concat(parameters('serverName'),'/ActiveDirectory')]",
-                            "apiVersion": "[variables('api')]",
-                            "properties": {
-                                "administratorType": "[parameters('aadData').administratorType]",
-                                "identityResourceId": "[parameters('aadData').identityResourceId]",
-                                "login": "[parameters('aadData').login]",
-                                "sid": "[parameters('aadData').sid]",
-                                "tenantId": "[parameters('aadData').tenantId]"
-                            }
-                        }
-                    ]
-                }
-            }
+        "tags": "[parameters('tags')]"
+      },
+  
+      // ------------------------------------------------------
+      // 2) Database Resource (dependsOn the Server)
+      // ------------------------------------------------------
+      {
+        "type": "Microsoft.DBforMySQL/flexibleServers/databases",
+        "apiVersion": "[parameters('apiVersion')]",
+        "name": "[concat(parameters('serverName'), '/', parameters('databaseName'))]",
+        "properties": {
+          "charset": "utf8",
+          "collation": "utf8_general_ci"
         },
-        {
-            "condition": "[and(greater(length(variables('serverParameters')), 0), parameters('aadEnabled'))]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2019-08-01",
-            "copy": {
-                "count": "[if(greater(length(variables('serverParameters')), 0), length(variables('serverParameters')), 1)]",
-                "mode": "serial",
-                "name": "serverParametersIterator"
-            },
-            "dependsOn": [
-                "[concat('Microsoft.DBforMySQL/flexibleServers/', parameters('serverName'))]",
-                "[concat('Microsoft.Resources/deployments/addAdmins-', parameters('guid'))]"
-            ],
-            "name": "[concat('serverParameters-', copyIndex(), '-', parameters('guid'))]",
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": [
-                        {
-                            "type": "Microsoft.DBforMySQL/flexibleServers/configurations",
-                            "name": "[concat(parameters('serverName'),'/',variables('serverParameters')[copyIndex()].name)]",
-                            "apiVersion": "[variables('api')]",
-                            "properties": {
-                                "value": "[variables('serverParameters')[copyIndex()].value]",
-                                "source": "[variables('serverParameters')[copyIndex()].source]"
-                            }
-                        }
-                    ]
+        "dependsOn": [
+          "[resourceId('Microsoft.DBforMySQL/flexibleServers', parameters('serverName'))]"
+        ],
+        "tags": "[parameters('tags')]"
+      },
+  
+      // ------------------------------------------------------
+      // 3) Nested Deployment: Firewall Rules
+      // ------------------------------------------------------
+      {
+        "condition": "[greater(length(variables('firewallRules')), 0)]",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2021-04-01",
+        "name": "[concat('firewallRulesDeployment-', copyIndex('firewallRulesIterator'))]",
+        "copy": {
+          "name": "firewallRulesIterator",
+          "count": "[length(variables('firewallRules'))]"
+        },
+        "dependsOn": [
+          "[resourceId('Microsoft.DBforMySQL/flexibleServers', parameters('serverName'))]"
+        ],
+        "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "resources": [
+              {
+                "type": "Microsoft.DBforMySQL/flexibleServers/firewallRules",
+                "apiVersion": "[parameters('firewallRulesAPIVersion')]",
+                "name": "[concat(parameters('serverName'), '/', variables('firewallRules')[copyIndex('firewallRulesIterator')].name)]",
+                "properties": {
+                  "startIpAddress": "[variables('firewallRules')[copyIndex('firewallRulesIterator')].startIpAddress]",
+                  "endIpAddress": "[variables('firewallRules')[copyIndex('firewallRulesIterator')].endIpAddress]"
                 }
-            }
+              }
+            ]
+          },
+          "parameters": {}
         }
-    ]
-}
+      },
+  
+      // ------------------------------------------------------
+      // 4) Nested Deployment: AAD Admins
+      // ------------------------------------------------------
+      {
+        "condition": "[parameters('aadEnabled')]",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2021-04-01",
+        "name": "[concat('aadAdminsDeployment-', guid(concat(parameters('serverName'), '-AAD')))]",
+        "dependsOn": [
+          "[resourceId('Microsoft.DBforMySQL/flexibleServers', parameters('serverName'))]"
+        ],
+        "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "resources": [
+              {
+                "type": "Microsoft.DBforMySQL/flexibleServers/administrators",
+                "apiVersion": "[variables('api')]",
+                "name": "[concat(parameters('serverName'), '/ActiveDirectory')]",
+                "properties": {
+                  "administratorType": "[parameters('aadData').administratorType]",
+                  "identityResourceId": "[parameters('aadData').identityResourceId]",
+                  "login": "[parameters('aadData').login]",
+                  "sid": "[parameters('aadData').sid]",
+                  "tenantId": "[parameters('aadData').tenantId]"
+                }
+              }
+            ]
+          },
+          "parameters": {}
+        }
+      },
+  
+      // ------------------------------------------------------
+      // 5) Nested Deployment: Server Parameters
+      // ------------------------------------------------------
+      {
+        "condition": "[and(greater(length(variables('serverParameters')), 0), parameters('aadEnabled'))]",
+        "type": "Microsoft.Resources/deployments",
+        "apiVersion": "2021-04-01",
+        "name": "[concat('serverParametersDeployment-', copyIndex('serverParametersIterator'))]",
+        "copy": {
+          "name": "serverParametersIterator",
+          "count": "[length(variables('serverParameters'))]"
+        },
+        "dependsOn": [
+          "[resourceId('Microsoft.DBforMySQL/flexibleServers', parameters('serverName'))]",
+          "[concat('aadAdminsDeployment-', guid(concat(parameters('serverName'), '-AAD')))]"
+        ],
+        "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "resources": [
+              {
+                "type": "Microsoft.DBforMySQL/flexibleServers/configurations",
+                "apiVersion": "[variables('api')]",
+                "name": "[concat(parameters('serverName'), '/', variables('serverParameters')[copyIndex('serverParametersIterator')].name)]",
+                "properties": {
+                  "value": "[variables('serverParameters')[copyIndex('serverParametersIterator')].value]",
+                  "source": "[variables('serverParameters')[copyIndex('serverParametersIterator')].source]"
+                }
+              }
+            ]
+          },
+          "parameters": {}
+        }
+      }
+    ],
+    "outputs": {
+      "fullyQualifiedServerName": {
+        "type": "string",
+        "value": "[variables('fullyQualifiedServerName')]",
+        "metadata": {
+          "description": "The fully qualified domain name of the MySQL server."
+        }
+      },
+      "databaseName": {
+        "type": "string",
+        "value": "[parameters('databaseName')]",
+        "metadata": {
+          "description": "Name of the created database."
+        }
+      }
+    }
+  }
+  

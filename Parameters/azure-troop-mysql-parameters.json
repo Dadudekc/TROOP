@@ -8,8 +8,8 @@
             },
             {
                 "name": "ClientIPAddress",
-                "startIPAddress": "x.x.x.x",
-                "endIPAddress": "x.x.x.x"
+                "startIPAddress": "<REPLACE_WITH_CLIENT_IPv6>",
+                "endIPAddress": "<REPLACE_WITH_CLIENT_IPv6>"
             }
         ]
     }
