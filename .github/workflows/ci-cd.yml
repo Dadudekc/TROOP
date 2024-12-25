@@ -1,0 +1,55 @@
+name: CI/CD Pipeline for MySQL Flexible Server
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 2. Set up Azure CLI
+      - name: Set Up Azure CLI
+        uses: azure/setup-azure-cli@v3
+
+      # 3. Log in to Azure using the Service Principal
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 4. Validate ARM Template
+      - name: Validate ARM Template
+        run: |
+          az deployment group validate \
+            --resource-group TROOP-Test \
+            --template-file Templates/mysql_flexible_server_template.json \
+            --parameters Parameters/azure-troop-mysql-parameters.json
+
+      # 5. Deploy ARM Template
+      - name: Deploy ARM Template
+        run: |
+          az deployment group create \
+            --resource-group TROOP-Test \
+            --template-file Templates/mysql_flexible_server_template.json \
+            --parameters Parameters/azure-troop-mysql-parameters.json
+
+      # 6. (Optional) Post-Deployment Tests
+      - name: Verify Deployment
+        run: |
+          az mysql flexible-server show --name troop-mysql-server-unique --resource-group TROOP-Test
+
+      # 7. (Optional) Cleanup Resources
+      # Uncomment the following step if you want to delete the resource group after deployment
+      # - name: Cleanup Resource Group
+      #   run: |
+      #     az group delete --name TROOP-Test --yes --no-wait
