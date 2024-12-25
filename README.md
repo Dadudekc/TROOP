@@ -11,6 +11,9 @@ TROOP is an open-source project focused on leveraging **Machine Learning**, **Re
 - **Risk Management Automation** to minimize trading losses.
 - **Advanced Backtesting Frameworks** to validate strategies.
 
+**Mission:**  
+TROOP aims to empower traders and developers by providing a robust, AI-driven platform that automates trading strategies, optimizes performance through machine learning, and ensures seamless operations through advanced automation tools.
+
 This repository is a stepping stone towards building a scalable trading solution powered by **Azure** cloud infrastructure, with adaptability for private or public deployments.
 
 ---
