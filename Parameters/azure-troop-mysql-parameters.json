@@ -1,0 +1,70 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "serverName": {
+            "value": "troop-mysql-server"
+        },
+        "location": {
+            "value": "eastus2"
+        },
+        "serverEdition": {
+            "value": "GeneralPurpose"
+        },
+        "vCores": {
+            "value": 1
+        },
+        "storageSizeGB": {
+            "value": 20
+        },
+        "haEnabled": {
+            "value": "Enabled"
+        },
+        "standbyAvailabilityZone": {
+            "value": "2"
+        },
+        "firewallRules": {
+            "value": [
+                {
+                    "name": "AllowAllAzureServicesAndResourcesWithinAzureIps",
+                    "startIpAddress": "0.0.0.0",
+                    "endIpAddress": "0.0.0.0"
+                },
+                {
+                    "name": "ClientIPAddress",
+                    "startIpAddress": "2601:2c7:97f:4aa0:acd8:8800:12b1:31d4",
+                    "endIpAddress": "2601:2c7:97f:4aa0:acd8:8800:12b1:31d4"
+                },
+                {
+                    "name": "AllowMyIP",
+                    "startIpAddress": "0.0.0.0",
+                    "endIpAddress": "255.255.255.255"
+                }
+            ]
+        },
+        "backupRetentionDays": {
+            "value": 7
+        },
+        "geoRedundantBackup": {
+            "value": "Disabled"
+        },
+        "administratorLogin": {
+            "value": "DaDudeKC"
+        },
+        "administratorLoginPassword": {
+            "value": "Falcons#1247"
+        },
+        "databaseName": {
+            "value": "TROOP"
+        },
+        "tags": {
+            "value": {
+                "Project": "TROOP",
+                "Environment": "Development"
+            }
+        },
+        "apiVersion": {
+            "value": "2021-05-01"
+        }
+    }
+}
