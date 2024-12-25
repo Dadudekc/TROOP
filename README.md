@@ -1,4 +1,5 @@
 # **TROOP**
+**TROOP** stands for **Trading Reinforcement Optimization Operations Platform**, encapsulating our mission to create a unified system for automated, AI-driven trading.
 
 ## **Overview**
 TROOP is an open-source project focused on leveraging **Machine Learning**, **Reinforcement Learning**, and **AI Automation** for financial trading. It encompasses a variety of tools, utilities, and scripts to create a comprehensive trading ecosystem capable of handling:
