@@ -1,7 +1,3 @@
-Here’s a **README** tailored to your project’s purpose, encompassing machine learning, finance, AI agents, and automation, while addressing the vast scope of files you plan to integrate into Azure:
-
----
-
 # **TROOP**
 
 ## **Overview**
@@ -136,6 +132,6 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 ## **Contact**
 For questions, suggestions, or collaboration, feel free to reach out via the **Issues** section or contact:
 
-**Project Lead**: [Victor Dixon]  
-**Email**: [DaDudeKC]  
-**Website**: [TradingRobotPlug.com]  
+**Project Lead**: Victor Dixon
+**Email**: DaDudeKC@gmail.com
+**Website**: TradingRobotPlug.com 
