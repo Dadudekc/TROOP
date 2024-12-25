@@ -1,0 +1,26 @@
+# Ignore parameter files with sensitive data
+Parameters/*.json
+
+# Ignore specific sensitive files
+azure-troop-mysql-parameters.json
+azure-tradingrobotplug-mysql-parameters.json
+
+# Ignore system files and logs
+*.log
+*.swp
+
+# Ignore local environment files
+.env
+.env.local
+.DS_Store
+
+# Ignore compiled output and cache
+node_modules/
+dist/
+__pycache__/
+*.pyc
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+
