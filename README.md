@@ -66,6 +66,25 @@ Scripts/
 ├── Scheduler/                  # Task scheduling utilities
 └── strategy/                   # Custom trading strategies
 ```
+TROOP\IT_HUB
+├── gui
+│   └── agent_menu.sh
+├── logs
+│   └── it_hub.log
+├── monitoring
+│   ├── alert_rules.json
+│   └── monitoring_hub.sh
+├── Parameters
+│   ├── azure-tradingrobotplug-mysql-parameters.json
+│   ├── azure-troop-mysql-parameters.json
+│   ├── README.md
+│   └── temp_parameters.json
+├── patches
+│   ├── patch-advanced_scheduling.sh
+│   ├── patch-cost_optimization.sh
+│   ├── patch-logic_apps.sh
+│   ├── patch-premium_kubernetes.sh
+│   └── patch-premium_logic_app.sh
 
 ---
 
