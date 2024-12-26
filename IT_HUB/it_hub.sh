@@ -13,12 +13,15 @@ set -euo pipefail
 # ---------------------------
 
 ENV_FILE="/mnt/d/TROOP/.env"
-LOG_FILE="/mnt/d/TROOP/it_hub.log"
+LOG_FILE="/mnt/d/TROOP/IT_HUB/logs/it_hub.log"
 
 ROOT_DIR="/mnt/d/TROOP"
-TEMPLATE_FILE="$ROOT_DIR/Templates/mysql_flexible_server_template.json"
-PARAMETERS_FILE="$ROOT_DIR/Parameters/azure-troop-mysql-parameters.json"
-TEMP_PARAMETERS_FILE="$ROOT_DIR/Parameters/temp_parameters.json"
+PATCH_DIR="$ROOT_DIR/patches"
+GUI_DIR="$ROOT_DIR/IT_HUB/gui"
+
+TEMPLATE_FILE="$ROOT_DIR/IT_HUB/Templates/mysql_flexible_server_template.json"
+PARAMETERS_FILE="$ROOT_DIR/IT_HUB/Parameters/azure-troop-mysql-parameters.json"
+TEMP_PARAMETERS_FILE="$ROOT_DIR/IT_HUB//Parameters/temp_parameters.json"
 
 # ---------------------------
 # Logging Functions
@@ -81,6 +84,58 @@ check_jq() {
   else
     log "$INFO" "'jq' is already installed."
   fi
+}
+
+# Switch Resource Group
+switch_resource_group() {
+  local new_group="$1"
+  if [[ -z "$new_group" ]]; then
+    # If no group is provided, list available groups interactively
+    new_group=$(az group list --query "[].name" -o tsv | fzf --height=15 --header="Select a resource group:")
+    [[ -z "$new_group" ]] && { log "$ERROR" "No resource group selected."; return 1; }
+  fi
+
+  # Verify the selected resource group exists
+  if az group exists --name "$new_group"; then
+    RESOURCE_GROUP="$new_group"
+    log "$INFO" "Switched to resource group: $RESOURCE_GROUP"
+
+    # Update the .env file
+    sed -i "s/^RESOURCE_GROUP=.*/RESOURCE_GROUP=$RESOURCE_GROUP/" "$ENV_FILE"
+    log "$INFO" "Updated .env file with the new resource group: $RESOURCE_GROUP"
+  else
+    log "$ERROR" "Resource group '$new_group' does not exist."
+    return 1
+  fi
+}
+
+# Delete Resource Group
+delete_resource_group_func() {
+  local group_name="$1"
+  if [[ -z "$group_name" ]]; then
+    # If no group is provided, list available groups interactively
+    group_name=$(az group list --query "[].name" -o tsv | fzf --height=15 --header="Select a resource group to delete:")
+    [[ -z "$group_name" ]] && { log "$ERROR" "No resource group selected for deletion."; return 1; }
+  fi
+
+  # Confirm deletion
+  read -r -p "Are you sure you want to delete the resource group '$group_name' and all its resources? [y/N]: " confirmation
+  case "$confirmation" in
+    [yY][eE][sS]|[yY])
+      ;;
+    *)
+      log "$INFO" "Deletion of resource group '$group_name' canceled."
+      return 0
+      ;;
+  esac
+
+  # Delete the resource group
+  log "$INFO" "Deleting resource group '$group_name'..."
+  if ! az group delete --name "$group_name" --yes --no-wait | tee -a "$LOG_FILE"; then
+    log "$ERROR" "Failed to delete resource group '$group_name'."
+    exit 1
+  fi
+  log "$INFO" "Deletion of resource group '$group_name' initiated successfully."
 }
 
 # Check if MySQL server exists
@@ -158,21 +213,25 @@ list_resources() {
   local resource_type="$1"
   case "$resource_type" in
     mysql)
-      log "$INFO" "Listing all MySQL Flexible Servers in the subscription..."
-      az mysql flexible-server list -o table | tee -a "$LOG_FILE"
+      log "$INFO" "Listing all MySQL Flexible Servers in resource group '$RESOURCE_GROUP'..."
+      az mysql flexible-server list --resource-group "$RESOURCE_GROUP" -o table | tee -a "$LOG_FILE"
       ;;
     vm)
-      log "$INFO" "Listing all Virtual Machines in the subscription..."
-      az vm list -o table | tee -a "$LOG_FILE"
+      log "$INFO" "Listing all Virtual Machines in resource group '$RESOURCE_GROUP'..."
+      az vm list --resource-group "$RESOURCE_GROUP" -o table | tee -a "$LOG_FILE"
       ;;
     storage)
-      log "$INFO" "Listing all Storage Accounts in the subscription..."
-      az storage account list -o table | tee -a "$LOG_FILE"
+      log "$INFO" "Listing all Storage Accounts in resource group '$RESOURCE_GROUP'..."
+      az storage account list --resource-group "$RESOURCE_GROUP" -o table | tee -a "$LOG_FILE"
       ;;
     all)
       list_resources mysql
       list_resources vm
       list_resources storage
+      ;;
+    resource-group)
+      log "$INFO" "Listing all Resource Groups in the subscription..."
+      az group list -o table | tee -a "$LOG_FILE"
       ;;
     *)
       log "$ERROR" "Unsupported resource type for listing: $resource_type"
@@ -181,7 +240,7 @@ list_resources() {
 }
 
 deploy_mysql() {
-  log "$INFO" "Deploying a new MySQL Flexible Server..."
+  log "$INFO" "Deploying a new MySQL Flexible Server in resource group '$RESOURCE_GROUP'..."
 
   if server_exists "$MYSQL_SERVER_NAME"; then
     log "$INFO" "Server name '$MYSQL_SERVER_NAME' already exists. Generating a unique name."
@@ -192,10 +251,7 @@ deploy_mysql() {
   create_mysql_temp_parameters
 
   log "$INFO" "Validating the deployment template for MySQL..."
-  if ! VALIDATION_OUTPUT=$(az deployment group validate \
-    --resource-group "$RESOURCE_GROUP" \
-    --template-file "$TEMPLATE_FILE" \
-    --parameters "@$TEMP_PARAMETERS_FILE" 2>&1); then
+  if ! VALIDATION_OUTPUT=$(az deployment group validate --resource-group "$RESOURCE_GROUP" --template-file "$TEMPLATE_FILE" --parameters "@$TEMP_PARAMETERS_FILE" 2>&1); then
     log "$ERROR" "Template validation failed for MySQL. Details:"
     log "$ERROR" "$VALIDATION_OUTPUT"
     log "$INFO" "Retaining temp_parameters.json for debugging."
@@ -204,10 +260,7 @@ deploy_mysql() {
   log "$INFO" "Template validation passed for MySQL."
 
   log "$INFO" "Deploying the MySQL Flexible Server..."
-  if ! DEPLOYMENT_OUTPUT=$(az deployment group create \
-    --resource-group "$RESOURCE_GROUP" \
-    --template-file "$TEMPLATE_FILE" \
-    --parameters "@$TEMP_PARAMETERS_FILE" 2>&1); then
+  if ! DEPLOYMENT_OUTPUT=$(az deployment group create --resource-group "$RESOURCE_GROUP" --template-file "$TEMPLATE_FILE" --parameters "@$TEMP_PARAMETERS_FILE" 2>&1); then
     if [[ "$DEPLOYMENT_OUTPUT" == *"ServerNameAlreadyExists"* ]]; then
       log "$ERROR" "Deployment failed: Server name already exists, even after adjustments."
     else
@@ -223,7 +276,7 @@ deploy_mysql() {
 }
 
 deploy_vm() {
-  log "$INFO" "Deploying a new Virtual Machine..."
+  log "$INFO" "Deploying a new Virtual Machine in resource group '$RESOURCE_GROUP'..."
 
   if vm_exists "$VM_NAME"; then
     log "$INFO" "VM name '$VM_NAME' already exists. Generating a unique name."
@@ -231,14 +284,7 @@ deploy_vm() {
     log "$INFO" "Generated unique VM name: $VM_NAME"
   fi
 
-  if ! az vm create \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$VM_NAME" \
-    --size "$VM_SIZE" \
-    --image "$VM_IMAGE" \
-    --admin-username "$VM_ADMIN_USERNAME" \
-    --admin-password "$VM_ADMIN_PASSWORD" \
-    --no-wait | tee -a "$LOG_FILE"; then
+  if ! az vm create --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --size "$VM_SIZE" --image "$VM_IMAGE" --admin-username "$VM_ADMIN_USERNAME" --admin-password "$VM_ADMIN_PASSWORD" --no-wait | tee -a "$LOG_FILE"; then
     log "$ERROR" "Deployment failed for VM '$VM_NAME'."
     exit 1
   fi
@@ -246,7 +292,7 @@ deploy_vm() {
 }
 
 deploy_storage() {
-  log "$INFO" "Deploying a new Storage Account..."
+  log "$INFO" "Deploying a new Storage Account in resource group '$RESOURCE_GROUP'..."
 
   if storage_exists "$STORAGE_ACCOUNT_NAME"; then
     log "$INFO" "Storage Account name '$STORAGE_ACCOUNT_NAME' already exists. Generating a unique name."
@@ -254,11 +300,7 @@ deploy_storage() {
     log "$INFO" "Generated unique Storage Account name: $STORAGE_ACCOUNT_NAME"
   fi
 
-  if ! az storage account create \
-    --name "$STORAGE_ACCOUNT_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --location "$STORAGE_LOCATION" \
-    --sku "$STORAGE_SKU" | tee -a "$LOG_FILE"; then
+  if ! az storage account create --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --location "$STORAGE_LOCATION" --sku "$STORAGE_SKU" | tee -a "$LOG_FILE"; then
     log "$ERROR" "Deployment failed for Storage Account '$STORAGE_ACCOUNT_NAME'."
     exit 1
   fi
@@ -331,6 +373,35 @@ delete_storage() {
   log "$INFO" "Deletion of Storage Account '$storage_name' initiated successfully."
 }
 
+# Delete Resource Group
+delete_resource_group_func() {
+  local group_name="$1"
+  if [[ -z "$group_name" ]]; then
+    # If no group is provided, list available groups interactively
+    group_name=$(az group list --query "[].name" -o tsv | fzf --height=15 --header="Select a resource group to delete:")
+    [[ -z "$group_name" ]] && { log "$ERROR" "No resource group selected for deletion."; return 1; }
+  fi
+
+  # Confirm deletion
+  read -r -p "Are you sure you want to delete the resource group '$group_name' and all its resources? [y/N]: " confirmation
+  case "$confirmation" in
+    [yY][eE][sS]|[yY])
+      ;;
+    *)
+      log "$INFO" "Deletion of resource group '$group_name' canceled."
+      return 0
+      ;;
+  esac
+
+  # Delete the resource group
+  log "$INFO" "Deleting resource group '$group_name'..."
+  if ! az group delete --name "$group_name" --yes --no-wait | tee -a "$LOG_FILE"; then
+    log "$ERROR" "Failed to delete resource group '$group_name'."
+    exit 1
+  fi
+  log "$INFO" "Deletion of resource group '$group_name' initiated successfully."
+}
+
 view_mysql() {
   local server_name="$1"
   if [[ -z "$server_name" ]]; then
@@ -395,6 +466,32 @@ initialize() {
     log "$ERROR" "Parameters file not found at $PARAMETERS_FILE. Exiting."
     exit 1
   fi
+
+  # Load all patch files
+  if [[ -d "$PATCH_DIR" ]]; then
+    log "$INFO" "Searching for patch files in '$PATCH_DIR'..."
+    for patch_file in "$PATCH_DIR"/patch-*.sh; do
+      if [[ -f "$patch_file" ]]; then
+        log "$INFO" "Loading patch file: $patch_file"
+        # shellcheck disable=SC1090
+        source "$patch_file"
+      fi
+    done
+    log "$INFO" "All available patches loaded successfully."
+  else
+    log "$INFO" "No patches directory found. Proceeding without patches."
+  fi
+
+  # Load GUI module
+  if [[ -f "$GUI_DIR/agent_menu.sh" ]]; then
+    log "$INFO" "Loading GUI module..."
+    # shellcheck disable=SC1090
+    source "$GUI_DIR/agent_menu.sh"
+    log "$INFO" "GUI module loaded successfully."
+  else
+    log "$ERROR" "GUI script 'agent_menu.sh' not found in '$GUI_DIR'. Exiting."
+    exit 1
+  fi
 }
 
 # ---------------------------
@@ -406,17 +503,24 @@ usage() {
 Usage: $0 <command> [options]
 
 Commands:
-  list <resource_type>                List resources. resource_type can be: mysql, vm, storage, all
+  list <resource_type>                List resources. resource_type can be: mysql, vm, storage, all, resource-group
   deploy <resource_type>              Deploy a new resource. resource_type can be: mysql, vm, storage
   delete <resource_type> <name>       Delete a resource. resource_type can be: mysql, vm, storage
   view <resource_type> <name>         View details of a resource. resource_type can be: mysql, vm, storage
+  set-resource-group [group_name]     Switch the active resource group. If no group_name is provided, a list will be shown.
+  delete-resource-group [group_name]  Delete a resource group. If no group_name is provided, a list will be shown.
   help                                Display this help message
+
+Premium Commands:
+  <premium_command>                   Description of premium command.
 
 Examples:
   $0 list mysql
   $0 deploy vm
   $0 delete storage troopstorage
   $0 view mysql troop-mysql
+  $0 set-resource-group TROOP-Production
+  $0 delete-resource-group TROOP-Test
 EOF
 }
 
@@ -502,76 +606,46 @@ parse_command() {
           ;;
       esac
       ;;
+    set-resource-group)
+      if [[ $# -gt 1 ]]; then
+        log "$ERROR" "'set-resource-group' command takes at most one argument."
+        usage
+        exit 1
+      fi
+      local group_name=""
+      if [[ $# -eq 1 ]]; then
+        group_name="$1"
+      fi
+      switch_resource_group "$group_name"
+      ;;
+    delete-resource-group)
+      if [[ $# -gt 1 ]]; then
+        log "$ERROR" "'delete-resource-group' command takes at most one argument."
+        usage
+        exit 1
+      fi
+      local group_name=""
+      if [[ $# -eq 1 ]]; then
+        group_name="$1"
+      fi
+      delete_resource_group_func "$group_name"
+      ;;
     help|--help|-h)
       usage
       ;;
     *)
+      # Allow patches to handle unknown commands
+      if [[ "$PREMIUM_FEATURES_ENABLED" == "true" ]]; then
+        if type extend_commands &>/dev/null; then
+          extend_commands "$command" "$@"
+          exit $?
+        fi
+      fi
       log "$ERROR" "Unknown command: $command"
       usage
       exit 1
       ;;
   esac
-}
-
-# ---------------------------
-# Agent Interface (fzf)
-# ---------------------------
-agent_menu() {
-  if ! command -v fzf &>/dev/null; then
-    log "$ERROR" "fzf not found. Please install fzf for the agent interface."
-    log "$INFO"  "Running usage instructions instead."
-    usage
-    return
-  fi
-
-  while true; do
-    action=$(printf "List Resources\nDeploy Resource\nDelete Resource\nView Resource Details\nExit" \
-      | fzf --height=15 --border --header="Select an action to perform:")
-
-    case "$action" in
-      "List Resources")
-        resource_type=$(printf "mysql\nvm\nstorage\nall" \
-          | fzf --height=10 --border --header="Select resource type:")
-        [[ -n "$resource_type" ]] && list_resources "$resource_type"
-        ;;
-      "Deploy Resource")
-        resource_type=$(printf "mysql\nvm\nstorage" \
-          | fzf --height=6 --border --header="Select resource type to deploy:")
-        if [[ -n "$resource_type" ]]; then
-          case "$resource_type" in
-            mysql)    deploy_mysql ;;
-            vm)       deploy_vm ;;
-            storage)  deploy_storage ;;
-          esac
-        fi
-        ;;
-      "Delete Resource")
-        resource_type=$(printf "mysql\nvm\nstorage" \
-          | fzf --height=6 --border --header="Select resource type to delete:")
-        if [[ -n "$resource_type" ]]; then
-          echo "Type the name of the $resource_type to delete, then press Enter."
-          read -r resource_name
-          [[ -n "$resource_name" ]] && delete_"$resource_type" "$resource_name"
-        fi
-        ;;
-      "View Resource Details")
-        resource_type=$(printf "mysql\nvm\nstorage" \
-          | fzf --height=6 --border --header="Select resource type to view:")
-        if [[ -n "$resource_type" ]]; then
-          echo "Type the name of the $resource_type to view, then press Enter."
-          read -r resource_name
-          [[ -n "$resource_name" ]] && view_"$resource_type" "$resource_name"
-        fi
-        ;;
-      "Exit")
-        log "$INFO" "Exiting the agent interface."
-        break
-        ;;
-      *)
-        log "$ERROR" "Invalid choice. Please try again."
-        ;;
-    esac
-  done
 }
 
 # ---------------------------

@@ -1,0 +1,17 @@
+{
+    "alerts": [
+      {
+        "name": "MySQLServer1",
+        "type": "mysql/flexibleServers",
+        "metric": "StorageUsed",
+        "threshold": 90
+      },
+      {
+        "name": "VM1",
+        "type": "virtualMachines",
+        "metric": "Percentage CPU",
+        "threshold": 80
+      }
+    ]
+  }
+  

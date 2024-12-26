@@ -1,12 +1,14 @@
-name: IT Hub Workflow with Testing
+name: IT Hub Workflow
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  test-and-deploy:
+  setup-and-test:
+    name: Setup and Test IT Hub
     runs-on: ubuntu-latest
 
     steps:
@@ -25,61 +27,76 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y jq fzf
+          sudo apt-get update && sudo apt-get install -y jq fzf
 
       - name: Setup IT Hub Environment
-        env:
-          ENV_FILE: /mnt/d/TROOP/.env
         run: |
-          echo "Setting up the IT Hub environment..."
-          # Ensure the script is executable
+          echo "Configuring IT Hub environment..."
           chmod +x ./it_hub.sh
-          # Export a dummy .env for testing purposes (replace with secrets in production)
-          echo "MYSQL_SERVER_NAME=test-mysql" > /mnt/d/TROOP/.env
-          echo "MYSQL_LOCATION=eastus2" >> /mnt/d/TROOP/.env
-          echo "MYSQL_SERVER_EDITION=GeneralPurpose" >> /mnt/d/TROOP/.env
-          echo "MYSQL_VCORES=1" >> /mnt/d/TROOP/.env
-          echo "MYSQL_STORAGE_SIZE=20" >> /mnt/d/TROOP/.env
-          echo "MYSQL_ADMIN_USERNAME=TestUser" >> /mnt/d/TROOP/.env
-          echo "MYSQL_ADMIN_PASSWORD=TestPass123!" >> /mnt/d/TROOP/.env
-          echo "RESOURCE_GROUP=IT-Hub-Test" >> /mnt/d/TROOP/.env
-          echo "CLIENT_IP=0.0.0.0" >> /mnt/d/TROOP/.env
+          mkdir -p /mnt/d/TROOP
+          cat <<EOL > /mnt/d/TROOP/.env
+MYSQL_SERVER_NAME=test-mysql
+MYSQL_LOCATION=eastus
+MYSQL_SERVER_EDITION=GeneralPurpose
+MYSQL_VCORES=1
+MYSQL_STORAGE_SIZE=20
+MYSQL_ADMIN_USERNAME=TestUser
+MYSQL_ADMIN_PASSWORD=TestPass123!
+MYSQL_DATABASE_NAME=TestDB
+CLIENT_IP=0.0.0.0
+RESOURCE_GROUP=IT-Hub-Test
+EOL
 
-      - name: Test IT Hub Script
-        env:
-          ENV_FILE: /mnt/d/TROOP/.env
+      - name: Validate Script
         run: |
-          echo "Running IT Hub tests..."
+          echo "Validating script syntax..."
+          bash -n ./it_hub.sh
 
-          # Test listing resources
-          ./it_hub.sh list all
-
-          # Test deploying MySQL
+      - name: Test Core Functions
+        run: |
+          echo "Testing core IT Hub functions..."
+          ./it_hub.sh list resource-group
+          ./it_hub.sh set-resource-group IT-Hub-Test
           ./it_hub.sh deploy mysql
-
-          # Test viewing deployed MySQL details
           ./it_hub.sh view mysql test-mysql
-
-          # Test deleting MySQL server
           ./it_hub.sh delete mysql test-mysql
+          ./it_hub.sh delete-resource-group IT-Hub-Test
 
-          # Re-run resource listing to confirm deletion
-          ./it_hub.sh list all
+      - name: Review Logs
+        run: |
+          echo "Reviewing logs for test run..."
+          cat /mnt/d/TROOP/it_hub.log
 
-      - name: Deploy Production Resources
-        if: success()
-        env:
-          ENV_FILE: /mnt/d/TROOP/.env
+  deploy-production:
+    name: Deploy Production Resources
+    runs-on: ubuntu-latest
+    needs: setup-and-test
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq fzf
+
+      - name: Deploy Resources
         run: |
           echo "Deploying production resources..."
           ./it_hub.sh deploy mysql
 
-      - name: Post-Deployment Logs and Validation
+      - name: Post-Deployment Validation
         run: |
-          echo "Reviewing logs and validating deployment..."
-          cat /mnt/d/TROOP/it_hub.log
-
-      - name: List Final Deployed Resources
-        run: |
+          echo "Validating deployment..."
           ./it_hub.sh list all
+          cat /mnt/d/TROOP/it_hub.log
