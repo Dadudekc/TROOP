@@ -1,10 +1,10 @@
 # Ignore parameter files with sensitive data
-Parameters/*.json
+IT_HUB/Parameters/*.json
 
 # Ignore specific sensitive files
-Parameters/azure-troop-mysql-parameters.json
+IT_HUB/Parameters/azure-troop-mysql-parameters.json
 
-Parameters/azure-tradingrobotplug-mysql-parameters.json
+IT_HUB/Parameters/azure-tradingrobotplug-mysql-parameters.json
 # Ignore system files and logs
 *.log
 *.swp
