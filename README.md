@@ -143,7 +143,7 @@ troop\IT_HUB
 ---
 
 ## **Contributing**
-We welcome contributions! Please fork the repository, create a branch, and submit a pull request. For major changes, open an issue to discuss your project-ideas.
+We welcome contributions! Please fork the repository, create a branch, and submit a pull request. For major changes, open an issue to discuss your project-project-ideas.
 
 ---
 
