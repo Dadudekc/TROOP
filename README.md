@@ -1,8 +1,8 @@
-# **TROOP**
-**TROOP** stands for **Trading Reinforcement Optimization Operations Platform**, encapsulating our mission to create a unified system for automated, AI-driven trading.
+# **troop**
+**troop** stands for **Trading Reinforcement Optimization Operations Platform**, encapsulating our mission to create a unified system for automated, AI-driven trading.
 
 ## **Overview**
-TROOP is an open-source project focused on leveraging **Machine Learning**, **Reinforcement Learning**, and **AI Automation** for financial trading. It encompasses a variety of tools, utilities, and scripts to create a comprehensive trading ecosystem capable of handling:
+troop is an open-source project focused on leveraging **Machine Learning**, **Reinforcement Learning**, and **AI Automation** for financial trading. It encompasses a variety of tools, utilities, and scripts to create a comprehensive trading ecosystem capable of handling:
 
 - **Real-time Data Fetching** from multiple APIs.
 - **Machine Learning Integration** for predictive modeling and strategy optimization.
@@ -12,7 +12,7 @@ TROOP is an open-source project focused on leveraging **Machine Learning**, **Re
 - **Advanced Backtesting Frameworks** to validate strategies.
 
 **Mission:**  
-TROOP aims to empower traders and developers by providing a robust, AI-driven platform that automates trading strategies, optimizes performance through machine learning, and ensures seamless operations through advanced automation tools.
+troop aims to empower traders and developers by providing a robust, AI-driven platform that automates trading strategies, optimizes performance through machine learning, and ensures seamless operations through advanced automation tools.
 
 This repository is a stepping stone towards building a scalable trading solution powered by **Azure** cloud infrastructure, with adaptability for private or public deployments.
 
@@ -66,7 +66,7 @@ Scripts/
 ├── Scheduler/                  # Task scheduling utilities
 └── strategy/                   # Custom trading strategies
 ```
-TROOP\IT_HUB
+troop\IT_HUB
 ├── gui
 │   └── agent_menu.sh
 ├── logs
@@ -75,7 +75,7 @@ TROOP\IT_HUB
 │   ├── alert_rules.json
 │   └── monitoring_hub.sh
 ├── Parameters
-│   ├── azure-tradingrobotplug-mysql-parameters.json
+│   ├── azure-trading-robot-plug-mysql-parameters.json
 │   ├── azure-troop-mysql-parameters.json
 │   ├── README.md
 │   └── temp_parameters.json
@@ -143,7 +143,7 @@ TROOP\IT_HUB
 ---
 
 ## **Contributing**
-We welcome contributions! Please fork the repository, create a branch, and submit a pull request. For major changes, open an issue to discuss your ideas.
+We welcome contributions! Please fork the repository, create a branch, and submit a pull request. For major changes, open an issue to discuss your project-ideas.
 
 ---
 
@@ -156,5 +156,5 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 For questions, suggestions, or collaboration, feel free to reach out via the **Issues** section or contact:
 
 **Project Lead**: Victor Dixon
-**Email**: DaDudeKC@gmail.com
-**Website**: TradingRobotPlug.com 
+**Email**: dadudekc@gmail.com
+**Website**: trading-robot-plug.com 
